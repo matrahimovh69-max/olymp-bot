@@ -4,7 +4,7 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from olympiad_db import OLYMPIAD_TESTS
 
 # Бот токени
-TOKEN = os.getenv("BOT_TOKEN", "TOKEN_INGIZNI_SHU_YERGA_YOZING")
+TOKEN = os.getenv("BOT_TOKEN", "8886969003:AAEh6mkVzOqnYKGjPjvOMytDuxAiG4cUCng")
 bot = telebot.TeleBot(TOKEN)
 
 # Фойдаланувчилар танловини вақтинча сақлаш
