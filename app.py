@@ -1,4 +1,3 @@
-# Mybot.py
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types
@@ -98,7 +97,6 @@ async def go_back(message: types.Message):
     await send_welcome(message)
 
 async def main():
-    # aiogram 3.x учун ишга тушириш қисми
     await dp.start_polling(bot)
 
 if __name__ == '__main__':
