@@ -1,15 +1,12 @@
 import os
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from olympiad_db import OLYMPIAD_TESTS
 
-# Бот токени
-TOKEN = os.getenv("BOT_TOKEN", "8886969003:AAEh6mkVzOqnYKGjPjvOMytDuxAiG4cUCng")
+# Токенни Railway'даги Variables'дан олиш
+TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
-# Фойдаланувчилар танловини вақтинча сақлаш
-user_data = {}
-
+# /start буйруғи учун асосий меню
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     markup = InlineKeyboardMarkup()
@@ -19,61 +16,32 @@ def send_welcome(message):
         InlineKeyboardButton("11-синф", callback_data="class_11")
     )
     bot.send_message(
-        message.chat.id, 
-        "Ассалому алайкум! Рус тили ва адабиёти олимпиадаси ботига хуш келибсиз.\nИлтимос, синфингизни танланг:", 
+        message.chat.id,
+        "Ассалому алайкум! Рус тили ва адабиёти олимпиадаси ботига хуш келибсиз.\nИлтимос, синфингизни танланг:",
         reply_markup=markup
     )
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("class_"))
-def select_class(call):
-    class_num = call.data.split("_")[1]
-    user_data[call.from_user.id] = {"class": class_num}
+# Тугмалар босилганда ишлайдиган қисм
+@bot.callback_query_handler(func=lambda call: True)
+def callback_inline(call):
+    bot.answer_callback_query(call.id) # Тугма юкланишини тўхтатиш учун
     
-    markup = InlineKeyboardMarkup()
-    markup.row(
-        InlineKeyboardButton("1-вариант", callback_data="var_1"),
-        InlineKeyboardButton("2-вариант", callback_data="var_2")
-    )
-    bot.edit_message_text(
-        f"Сиз {class_num}-синфни танладингиз.\nЭнди вариантни танланг:",
-        call.message.chat.id,
-        call.message.message_id,
-        reply_markup=markup
-    )
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("var_"))
-def select_variant(call):
-    var_num = call.data.split("_")[1]
-    user_id = call.from_user.id
-    
-    if user_id not in user_data or "class" not in user_data[user_id]:
-        bot.answer_callback_query(call.id, "Илтимос, аввал /start буйруғини босиб синфни танланг!")
-        return
-        
-    class_num = user_data[user_id]["class"]
-    tests = OLYMPIAD_TESTS.get(class_num, {}).get(f"variant_{var_num}", [])
-    
-    bot.answer_callback_query(call.id, "Тестлар юкланмоқда...")
-    
-    # Ҳар бир савол ва унинг вариантларини тугмалар билан чиқарамиз
-    for item in tests:
-        markup = InlineKeyboardMarkup()
-        for opt in item["options"]:
-            btn_text = opt[:3]  # Масалан: А), В) ва ҳ.к.
-            markup.add(InlineKeyboardButton(opt, callback_data=f"ans_{btn_text[0]}"))
-            
+    if call.data == "class_9":
         bot.send_message(
-            call.message.chat.id,
-            f"{item['question']}",
-            reply_markup=markup
+            call.message.chat.id, 
+            "📚 **9-синф олимпиада тестлари:**\n\nБу ерга 9-синф тест саволлари ва вариантларини жойлаштиришингиз мумкин."
         )
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("ans_"))
-def check_answer(call):
-    answer = call.data.split("_")[1]
-    bot.answer_callback_query(call.id, f"Сиз {answer} жавобини танладингиз!")
+    elif call.data == "class_10":
+        bot.send_message(
+            call.message.chat.id, 
+            "📚 **10-синф олимпиада тестлари:**\n\nБу ерга 10-синф тест саволлари ва вариантларини жойлаштиришингиз мумкин."
+        )
+    elif call.data == "class_11":
+        bot.send_message(
+            call.message.chat.id, 
+            "📚 **11-синф олимпиада тестлари:**\n\nБу ерга 11-синф тест саволлари ва вариантларини жойлаштиришингиз мумкин."
+        )
 
 if __name__ == "__main__":
     print("Бот ишга тушди...")
-    bot.remove_webhook()
-    bot.infinity_polling(skip_pending=True)
+    bot.infinity_polling()
