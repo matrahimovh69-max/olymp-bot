@@ -1,14 +1,13 @@
-# app.py (ёки main.py)
 import os
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from olympiad_db import OLYMPIAD_TESTS
 
-# Бот токени Railway'даги Variables'дан олинади ёки шу ерга ёзилади
-TOKEN = os.getenv("BOT_TOKEN", "8886969003:AAEh6mkVzOqnYKGjPjvOMytDuxAiG4cUCng")
+# Бот токени
+TOKEN = os.getenv("BOT_TOKEN", "TOKEN_INGIZNI_SHU_YERGA_YOZING")
 bot = telebot.TeleBot(TOKEN)
 
-# Фойдаланувчилар танловини сақлаш учун вақтинчалик хотира
+# Фойдаланувчилар танловини вақтинча сақлаш
 user_data = {}
 
 @bot.message_handler(commands=['start'])
@@ -56,13 +55,11 @@ def select_variant(call):
     
     bot.answer_callback_query(call.id, "Тестлар юкланмоқда...")
     
-    # Ҳар бир савол учун тугмалар яратиб юборамиз
+    # Ҳар бир савол ва унинг вариантларини тугмалар билан чиқарамиз
     for item in tests:
         markup = InlineKeyboardMarkup()
-        # Вариант жавоблари учун тугмалар (А, В, С, D)
         for opt in item["options"]:
-            # Тугма матни ва callback_data орқали жавобни текшириш мумкин
-            btn_text = opt[:3] # Масалан: "А)" ёки "В)"
+            btn_text = opt[:3]  # Масалан: А), В) ва ҳ.к.
             markup.add(InlineKeyboardButton(opt, callback_data=f"ans_{btn_text[0]}"))
             
         bot.send_message(
@@ -78,7 +75,5 @@ def check_answer(call):
 
 if __name__ == "__main__":
     print("Бот ишга тушди...")
-    # Эски webhook'ни ўчириб ташлаймиз, конфликт чиқмаслиги учун
     bot.remove_webhook()
-    # Ботни ишга туширамиз
     bot.infinity_polling(skip_pending=True)
