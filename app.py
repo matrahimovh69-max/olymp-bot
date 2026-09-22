@@ -24,7 +24,7 @@ def send_welcome(message):
 # Тугмалар босилганда ишлайдиган қисм
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
-    bot.answer_callback_query(call.id) # Тугма юкланишини тўхтатиш учун
+    bot.answer_callback_query(call.id)
     
     if call.data == "class_9":
         bot.send_message(
