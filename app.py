@@ -1,4 +1,3 @@
-# Mybot.py
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types
@@ -6,7 +5,6 @@ from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from olympiad_db import OLYMPIAD_TESTS
 
-# БОТ ТОКЕНИНИ ҚУЙИДАГИ ПУСТИНГ ИЧИГА ЁЗАСИЗ:
 API_TOKEN = '8886969003:AAEh6mkVzOqnYKGjPjvOMytDuxAiG4cUCng'
 
 logging.basicConfig(level=logging.INFO)
@@ -89,8 +87,10 @@ async def select_variant(message: types.Message):
         await message.answer("Бу вариант учун ҳали тестлар базага киритилмаган.")
         return
 
-    for t in tests:
-        question_text = f"<b>{t['question']}</b>\n\n" + "\n".join(t['options'])
+    # Ҳар бир саволни алоҳида биттагина хабар қилиб юбориш ва такрорланишини олдини олиш
+    for index, t in enumerate(tests, start=1):
+        options_text = "\n".join(t['options'])
+        question_text = f"<b>{index}. {t['question']}</b>\n\n{options_text}"
         await message.answer(question_text, parse_mode="HTML")
 
 @dp.message(lambda message: message.text == "🔙 Орқага")
@@ -98,7 +98,6 @@ async def go_back(message: types.Message):
     await send_welcome(message)
 
 async def main():
-    # aiogram 3.x учун ишга тушириш қисми
     await dp.start_polling(bot)
 
 if __name__ == '__main__':
