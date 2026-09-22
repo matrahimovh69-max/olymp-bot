@@ -78,4 +78,7 @@ def check_answer(call):
 
 if __name__ == "__main__":
     print("Бот ишга тушди...")
-    bot.infinity_polling()
+    # Эски webhook'ни ўчириб ташлаймиз, конфликт чиқмаслиги учун
+    bot.remove_webhook()
+    # Ботни ишга туширамиз
+    bot.infinity_polling(skip_pending=True)
