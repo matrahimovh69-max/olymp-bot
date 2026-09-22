@@ -3,7 +3,6 @@ import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from olympiad_db import OLYMPIAD_TESTS
 
 API_TOKEN = '8886969003:AAEh6mkVzOqnYKGjPjvOMytDuxAiG4cUCng'
 
@@ -11,6 +10,29 @@ logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
+
+# Тестлар базаси (беvosita коднинг ўзида, хатолик чиқмаслиги учун)
+OLYMPIAD_TESTS = {
+    "9": {
+        "variant_1": [
+            {"question": "9-синф 1-вариант: Физикадан Ньютоннинг нечта қонуни бор?", "options": ["A) 2 та", "B) 3 та", "C) 4 та", "D) 5 та"]},
+            {"question": "9-синф 1-вариант: Тезлик бирлиги нима?", "options": ["A) m/s", "B) kg", "C) m", "D) s"]}
+        ],
+        "variant_2": [
+            {"question": "9-синф 2-вариант: Энергия бирлиги нима?", "options": ["A) Joul", "B) Watt", "C) Newton", "D) Pascal"]}
+        ]
+    },
+    "10": {
+        "variant_1": [
+            {"question": "10-синф 1-вариант: Молекуляр физика асосчиларидан бири ким?", "options": ["A) Ньютон", "B) Эйнштейн", "C) Больцман", "D) Архимед"]}
+        ]
+    },
+    "11": {
+        "variant_1": [
+            {"question": "11-синф 1-вариант: Ёруғлик тезлиги тахминан қанчага тенг?", "options": ["A) 300 000 km/s", "B) 150 000 km/s", "C) 3000 km/s", "D) 10 000 km/s"]}
+        ]
+    }
+}
 
 @dp.message(Command("start", "help"))
 async def send_welcome(message: types.Message):
@@ -30,7 +52,6 @@ async def select_class(message: types.Message):
         keyboard = ReplyKeyboardMarkup(
             keyboard=[
                 [KeyboardButton(text="9-синф: 1-вариант"), KeyboardButton(text="9-синф: 2-вариант")],
-                [KeyboardButton(text="9-синф: 3-вариант"), KeyboardButton(text="9-синф: 4-вариант")],
                 [KeyboardButton(text="🔙 Орқага")]
             ],
             resize_keyboard=True
@@ -38,8 +59,7 @@ async def select_class(message: types.Message):
     elif grade == "10":
         keyboard = ReplyKeyboardMarkup(
             keyboard=[
-                [KeyboardButton(text="10-синф: 1-вариант"), KeyboardButton(text="10-синф: 2-вариант")],
-                [KeyboardButton(text="10-синф: 3-вариант")],
+                [KeyboardButton(text="10-синф: 1-вариант")],
                 [KeyboardButton(text="🔙 Орқага")]
             ],
             resize_keyboard=True
@@ -47,8 +67,7 @@ async def select_class(message: types.Message):
     elif grade == "11":
         keyboard = ReplyKeyboardMarkup(
             keyboard=[
-                [KeyboardButton(text="11-синф: 1-вариант"), KeyboardButton(text="11-синф: 2-вариант")],
-                [KeyboardButton(text="11-синф: 3-вариант")],
+                [KeyboardButton(text="11-синф: 1-вариант")],
                 [KeyboardButton(text="🔙 Орқага")]
             ],
             resize_keyboard=True
@@ -75,19 +94,14 @@ async def select_variant(message: types.Message):
         var = "variant_1"
     elif "2-вариант" in text:
         var = "variant_2"
-    elif "3-вариант" in text:
-        var = "variant_3"
-    elif "4-вариант" in text:
-        var = "variant_4"
     else:
-        return
+        var = "variant_1"
 
     tests = OLYMPIAD_TESTS.get(grade, {}).get(var, [])
     if not tests:
-        await message.answer("Бу вариант учун ҳали тестлар базага киритилмаган.")
+        await message.answer("Бу вариант учун ҳали тестлар базага киритилмаган. Тез орада қўшилади!")
         return
 
-    # Ҳар бир саволни алоҳида биттагина хабар қилиб юбориш ва такрорланишини олдини олиш
     for index, t in enumerate(tests, start=1):
         options_text = "\n".join(t['options'])
         question_text = f"<b>{index}. {t['question']}</b>\n\n{options_text}"
