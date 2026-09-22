@@ -1,118 +1,81 @@
-import asyncio
-import logging
-from aiogram import Bot, Dispatcher, types
-from aiogram.filters import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+# app.py (ёки main.py)
+import os
+import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from olympiad_db import OLYMPIAD_TESTS
 
-API_TOKEN = '8886969003:AAEh6mkVzOqnYKGjPjvOMytDuxAiG4cUCng'
+# Бот токени Railway'даги Variables'дан олинади ёки шу ерга ёзилади
+TOKEN = os.getenv("BOT_TOKEN", "8886969003:AAEh6mkVzOqnYKGjPjvOMytDuxAiG4cUCng")
+bot = telebot.TeleBot(TOKEN)
 
-logging.basicConfig(level=logging.INFO)
+# Фойдаланувчилар танловини сақлаш учун вақтинчалик хотира
+user_data = {}
 
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
-
-# Тестлар базаси (беvosita коднинг ўзида, хатолик чиқмаслиги учун)
-OLYMPIAD_TESTS = {
-    "9": {
-        "variant_1": [
-            {"question": "9-синф 1-вариант: Физикадан Ньютоннинг нечта қонуни бор?", "options": ["A) 2 та", "B) 3 та", "C) 4 та", "D) 5 та"]},
-            {"question": "9-синф 1-вариант: Тезлик бирлиги нима?", "options": ["A) m/s", "B) kg", "C) m", "D) s"]}
-        ],
-        "variant_2": [
-            {"question": "9-синф 2-вариант: Энергия бирлиги нима?", "options": ["A) Joul", "B) Watt", "C) Newton", "D) Pascal"]}
-        ]
-    },
-    "10": {
-        "variant_1": [
-            {"question": "10-синф 1-вариант: Молекуляр физика асосчиларидан бири ким?", "options": ["A) Ньютон", "B) Эйнштейн", "C) Больцман", "D) Архимед"]}
-        ]
-    },
-    "11": {
-        "variant_1": [
-            {"question": "11-синф 1-вариант: Ёруғлик тезлиги тахминан қанчага тенг?", "options": ["A) 300 000 km/s", "B) 150 000 km/s", "C) 3000 km/s", "D) 10 000 km/s"]}
-        ]
-    }
-}
-
-@dp.message(Command("start", "help"))
-async def send_welcome(message: types.Message):
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="9-синф"), KeyboardButton(text="10-синф"), KeyboardButton(text="11-синф")]
-        ],
-        resize_keyboard=True
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    markup = InlineKeyboardMarkup()
+    markup.row(
+        InlineKeyboardButton("9-синф", callback_data="class_9"),
+        InlineKeyboardButton("10-синф", callback_data="class_10"),
+        InlineKeyboardButton("11-синф", callback_data="class_11")
     )
-    await message.answer("Ассалому алайкум! Олимпиада тест ботига хуш келибсиз. Синфни танланг:", reply_markup=keyboard)
+    bot.send_message(
+        message.chat.id, 
+        "Ассалому алайкум! Рус тили ва адабиёти олимпиадаси ботига хуш келибсиз.\nИлтимос, синфингизни танланг:", 
+        reply_markup=markup
+    )
 
-@dp.message(lambda message: message.text in ["9-синф", "10-синф", "11-синф"])
-async def select_class(message: types.Message):
-    grade = message.text.split("-")[0]
+@bot.callback_query_handler(func=lambda call: call.data.startswith("class_"))
+def select_class(call):
+    class_num = call.data.split("_")[1]
+    user_data[call.from_user.id] = {"class": class_num}
+    
+    markup = InlineKeyboardMarkup()
+    markup.row(
+        InlineKeyboardButton("1-вариант", callback_data="var_1"),
+        InlineKeyboardButton("2-вариант", callback_data="var_2")
+    )
+    bot.edit_message_text(
+        f"Сиз {class_num}-синфни танладингиз.\nЭнди вариантни танланг:",
+        call.message.chat.id,
+        call.message.message_id,
+        reply_markup=markup
+    )
 
-    if grade == "9":
-        keyboard = ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text="9-синф: 1-вариант"), KeyboardButton(text="9-синф: 2-вариант")],
-                [KeyboardButton(text="🔙 Орқага")]
-            ],
-            resize_keyboard=True
-        )
-    elif grade == "10":
-        keyboard = ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text="10-синф: 1-вариант")],
-                [KeyboardButton(text="🔙 Орқага")]
-            ],
-            resize_keyboard=True
-        )
-    elif grade == "11":
-        keyboard = ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text="11-синф: 1-вариант")],
-                [KeyboardButton(text="🔙 Орқага")]
-            ],
-            resize_keyboard=True
-        )
-    else:
+@bot.callback_query_handler(func=lambda call: call.data.startswith("var_"))
+def select_variant(call):
+    var_num = call.data.split("_")[1]
+    user_id = call.from_user.id
+    
+    if user_id not in user_data or "class" not in user_data[user_id]:
+        bot.answer_callback_query(call.id, "Илтимос, аввал /start буйруғини босиб синфни танланг!")
         return
+        
+    class_num = user_data[user_id]["class"]
+    tests = OLYMPIAD_TESTS.get(class_num, {}).get(f"variant_{var_num}", [])
+    
+    bot.answer_callback_query(call.id, "Тестлар юкланмоқда...")
+    
+    # Ҳар бир савол учун тугмалар яратиб юборамиз
+    for item in tests:
+        markup = InlineKeyboardMarkup()
+        # Вариант жавоблари учун тугмалар (А, В, С, D)
+        for opt in item["options"]:
+            # Тугма матни ва callback_data орқали жавобни текшириш мумкин
+            btn_text = opt[:3] # Масалан: "А)" ёки "В)"
+            markup.add(InlineKeyboardButton(opt, callback_data=f"ans_{btn_text[0]}"))
+            
+        bot.send_message(
+            call.message.chat.id,
+            f"{item['question']}",
+            reply_markup=markup
+        )
 
-    await message.answer(f"Сиз {message.text}ни танладингиз. Керакли вариантни танланг:", reply_markup=keyboard)
+@bot.callback_query_handler(func=lambda call: call.data.startswith("ans_"))
+def check_answer(call):
+    answer = call.data.split("_")[1]
+    bot.answer_callback_query(call.id, f"Сиз {answer} жавобини танладингиз!")
 
-@dp.message(lambda message: "вариант" in message.text.lower())
-async def select_variant(message: types.Message):
-    text = message.text
-    if "9-синф" in text:
-        grade = "9"
-    elif "10-синф" in text:
-        grade = "10"
-    elif "11-синф" in text:
-        grade = "11"
-    else:
-        await message.answer("Хатолик юз берди.")
-        return
-
-    if "1-вариант" in text:
-        var = "variant_1"
-    elif "2-вариант" in text:
-        var = "variant_2"
-    else:
-        var = "variant_1"
-
-    tests = OLYMPIAD_TESTS.get(grade, {}).get(var, [])
-    if not tests:
-        await message.answer("Бу вариант учун ҳали тестлар базага киритилмаган. Тез орада қўшилади!")
-        return
-
-    for index, t in enumerate(tests, start=1):
-        options_text = "\n".join(t['options'])
-        question_text = f"<b>{index}. {t['question']}</b>\n\n{options_text}"
-        await message.answer(question_text, parse_mode="HTML")
-
-@dp.message(lambda message: message.text == "🔙 Орқага")
-async def go_back(message: types.Message):
-    await send_welcome(message)
-
-async def main():
-    await dp.start_polling(bot)
-
-if __name__ == '__main__':
-    asyncio.run(main())
+if __name__ == "__main__":
+    print("Бот ишга тушди...")
+    bot.infinity_polling()
